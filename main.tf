@@ -1,3 +1,14 @@
+provider "azurerm" {
+  version = "~> 1.27"
+}
+provider "external" {
+  version = "~> 1.1"
+}
+provider "null" {
+  version = "~> 2.1"
+} 
+
+
 locals {
   #Default to the folder name if no name is specified
   default_name_prefix = "${
@@ -17,7 +28,6 @@ locals {
       ? ""
       : "-${terraform.workspace}"
   }"
-  subscription_id = "8167906e-cadf-4916-861e-c70fdfe0321d"
 
   #Hacky default but saves an extra data.external call
   this_az_account_azuread_id = "${element(split("/",data.external.this_az_account.result.odata_metadata),3)}"
@@ -27,15 +37,13 @@ locals {
       : local.this_az_account_azuread_id
   }"
 
+
+  
   #Dumb 0.11 workaround, can just reference directly in 0.12
   azurerm_function_app_identity = "${element(azurerm_function_app.this.identity,0)}"
 }
 
-provider "azurerm" {
-  version = "=1.23.0-dev20190216h00-dev"
-  #Development subscription
-  subscription_id = "${local.subscription_id}"
-}
+
 data "azurerm_subscription" "this" {}
 
 data "azurerm_client_config" "this" {}
@@ -153,11 +161,5 @@ resource "azurerm_function_app" "this" {
   }
 }
 
-#These had to be done separately from app_settings because it created a circular dependency
-resource "null_resource" "azurerm_function_app_this_keyvaultsecrets" {
-  provisioner "local-exec" {
-    command = "az functionapp config appsettings set --subscription ${local.subscription_id} --resource-group ${azurerm_resource_group.this.name} --name ${azurerm_function_app.this.name} --query \"[].name\" --output table --settings ${azurerm_key_vault_secret.username.name}=\"@Microsoft.KeyVault(VaultName=${azurerm_key_vault.this.name};SecretName=${azurerm_key_vault_secret.username.name};SecretVersion=${azurerm_key_vault_secret.username.version})"
-    # ${azurerm_key_vault_secret.username.name}=\"@Microsoft.KeyVault(VaultName=${azurerm_key_vault.this.name};SecretName=${azurerm_key_vault_secret.username.name};SecretVersion=${azurerm_key_vault_secret.username.version})\" ${azurerm_key_vault_secret.password.name}=\"@Microsoft.KeyVault(VaultName=${azurerm_key_vault.this.name};SecretName=${azurerm_key_vault_secret.password.name};SecretVersion=${azurerm_key_vault_secret.password.version})\""
-  }
-}
+
 
