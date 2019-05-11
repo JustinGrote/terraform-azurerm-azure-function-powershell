@@ -18,15 +18,17 @@ locals {
       : "-${terraform.workspace}"
   }"
   subscription_id = "8167906e-cadf-4916-861e-c70fdfe0321d"
+
   #Hacky default but saves an extra data.external call
-  this_az_account_azuread_id = "${
-    split("/",data.external.this_az_account.result.odata_metadata)[3]
-  }"
-    azure_active_directory_id = "${
+  this_az_account_azuread_id = "${element(split("/",data.external.this_az_account.result.odata_metadata),3)}"
+  azure_active_directory_id = "${
     var.azure_active_directory_id != "azureactivedirectoryiddefault" 
       ? var.name
       : local.this_az_account_azuread_id
   }"
+
+  #Dumb 0.11 workaround, can just reference directly in 0.12
+  azurerm_function_app_identity = "${element(azurerm_function_app.this.identity,0)}"
 }
 
 provider "azurerm" {
@@ -78,14 +80,14 @@ resource "azurerm_key_vault" "this" {
 
 #Two Integrated Azure Keyvault Secrets. Will replace these with a foreach loop in Terraform 0.12
 resource "azurerm_key_vault_secret" "username" {
-  name     = "KEYVAULT_USERNAME"
+  name     = "KEYVAULTUSERNAME"
   value    = "replaceme"
   key_vault_id = "${azurerm_key_vault.this.id}"
   depends_on = ["azurerm_key_vault_access_policy.terraform"]
 }
 
 resource "azurerm_key_vault_secret" "password" {
-  name     = "KEYVAULT_PASSWORD"
+  name     = "KEYVAULTPASSWORD"
   value    = "replaceme"
   key_vault_id = "${azurerm_key_vault.this.id}"
   depends_on = ["azurerm_key_vault_access_policy.terraform"]
@@ -93,8 +95,7 @@ resource "azurerm_key_vault_secret" "password" {
 
 #Grant access to the account running terraform for purposes of adding additional keys
 resource "azurerm_key_vault_access_policy" "terraform" {
-  vault_name          = "${azurerm_key_vault.this.name}"
-  resource_group_name = "${azurerm_resource_group.this.name}"
+  key_vault_id = "${azurerm_key_vault.this.id}"
   tenant_id = "${local.this_az_account_azuread_id}"
   object_id = "${data.external.this_az_account.result.objectId}"
   secret_permissions = [
@@ -106,10 +107,9 @@ resource "azurerm_key_vault_access_policy" "terraform" {
 
 #Grant Read-Only Access for the Azure Function variables
 resource "azurerm_key_vault_access_policy" "this" {
-  vault_name          = "${azurerm_key_vault.this.name}"
-  resource_group_name = "${azurerm_resource_group.this.name}"
-  tenant_id = "${azurerm_function_app.this.identity[0].tenant_id}"
-  object_id = "${azurerm_function_app.this.identity[0].principal_id}"
+  key_vault_id = "${azurerm_key_vault.this.id}"
+  tenant_id = "${local.azurerm_function_app_identity["tenant_id"]}"
+  object_id = "${local.azurerm_function_app_identity["object_id"]}"
   secret_permissions = [
     "get"
   ]
@@ -147,8 +147,6 @@ resource "azurerm_function_app" "this" {
   app_settings              = {
     "FUNCTIONS_WORKER_RUNTIME"        = "powershell"
     "APPINSIGHTS_INSTRUMENTATIONKEY"  = "${azurerm_application_insights.this.instrumentation_key}"
-    #"KEYVAULT_USERNAME"               = "@Microsoft.KeyVault(VaultName=${azurerm_key_vault.this.name};SecretName=${azurerm_key_vault_secret.username.name};SecretVersion=${azurerm_key_vault_secret.username.version})"
-    #"KEYVAULT_PASSWORD"               = "@Microsoft.KeyVault(VaultName=${azurerm_key_vault.this.name};SecretName=${azurerm_key_vault_secret.password.name};SecretVersion=${azurerm_key_vault_secret.password.version})"
   }
   identity {
     type = "SystemAssigned"
