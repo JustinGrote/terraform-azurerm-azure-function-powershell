@@ -12,16 +12,13 @@ provider "null" {
 }
 
 locals {
-  #Default to the folder name if no name is specified
-  default_name_prefix = "${
-    path.module != "."
-      ? basename(path.module) 
-      : basename(path.cwd)
-  }"
+  #Default to the name of the module
   name_prefix = "${
-    var.name != "default"
-      ? var.name 
-      : local.default_name_prefix
+    var.name != null
+      ? var.name
+      : path.module != "."
+        ? basename(path.module)
+        : basename(path.cwd)
   }"
 
   #If the workspace is not named "default", add it as a suffix
@@ -33,60 +30,73 @@ locals {
         : ""
   }"
 
-  #If a resource Group was specified, use that for the group name
-  resource_group_name = "${
-    var.resource_group_name != ""
-    ? var.resource_group_name
-    : "${local.name_prefix}${local.name_suffix}"
-  }"
-
+  #Pluggable Resource Group
   resource_group = "${
     var.resource_group != null
     ? var.resource_group
     : azurerm_resource_group.this[0]
   }"
 
-  #if a resource group was specified, don't create the default resource
-  #create_resource_group = "${var.resource_group_name != "" ? 0 : 1}"
+  #Abbreviate Azure Regions (replace everything but the first character of each word)
+  azure_short_region_regex = "/\\b(\\w)((\\w*)?$|\\w+ )/"
 
-  #If a storage account resource group override was provided, use that, otherwise use the standard resource group name
-  # storage_account_resource_group_name = "${
-  #   var.storage_account_resource_group_name != ""
-  #   ? var.storage_account_resource_group_name
-  #   : local.resource_group_name
-  # }"
+  #Use the first location for multilocation resources
+  globalLocation = var.location[0]
 }
 
-resource "azurerm_resource_group" "this" {
-  count    = var.resource_group != null ? 0 : 1
+resource "azurerm_resource_group" "global" {
   name     = "${local.name_prefix}${local.name_suffix}"
-  location = "westus2"
+  location = local.globalLocation
+}
+resource "azurerm_resource_group" "this" {
+  count    = var.resource_group != null ? 0 : length(var.location)
+  name     = "${local.name_prefix}-${replace(var.location[count.index],local.azure_short_region_regex,"$1")}${local.name_suffix}"
+  location = var.location[count.index]
 }
 
 #Application Insights for Telementry
 resource "azurerm_application_insights" "this" {
   name                = "${local.name_prefix}${local.name_suffix}"
-  location            = var.location
-  resource_group_name = local.resource_group.name
+  location            = azurerm_resource_group.global.location
+  resource_group_name = azurerm_resource_group.global.name
   application_type    = "Web"
 }
 
-
 #Function App Infrastructure
 resource "azurerm_storage_account" "this" {
-  name                     = "${lower(replace("${local.name_prefix}${local.name_suffix}","-",""))}"
-  resource_group_name      = local.resource_group.name
-  location                 = local.resource_group.location
+  count                    = var.resource_group != null ? 0 : length(var.location)
+  #Storage Accounts have strict naming requirements (3-24 alphanumeric characters, all lowercase), hence the convoluted naming syntax
+  name                     = "${
+                                replace (
+                                  lower(
+                                    "${
+                                      local.name_prefix
+                                      }-${
+                                        replace(
+                                          var.location[count.index],
+                                          local.azure_short_region_regex,
+                                          "$1"
+                                        )
+                                      }${
+                                      local.name_suffix
+                                    }"
+                                  ),
+                                  "/[^\\w0-9]/",
+                                  ""
+                                )
+                              }"
+  resource_group_name      = azurerm_resource_group.this[count.index].name
+  location                 = var.location[count.index]
   account_tier             = "Standard"
   account_replication_type = "LRS"
 }
 
 resource "azurerm_app_service_plan" "this" {
-  name                = "${local.name_prefix}${local.name_suffix}"
-  location            = local.resource_group.location
-  resource_group_name = local.resource_group.name
+  count               = var.resource_group != null ? 0 : length(var.location)
+  name                = "${local.name_prefix}-${replace(var.location[count.index],local.azure_short_region_regex,"$1")}${local.name_suffix}"
+  resource_group_name = azurerm_resource_group.this[count.index].name
+  location            = var.location[count.index]
   kind                = "FunctionApp"
-
   sku {
     tier = "Dynamic"
     size = "Y1"
@@ -94,11 +104,12 @@ resource "azurerm_app_service_plan" "this" {
 }
 
 resource "azurerm_function_app" "this" {
-  name                      = "${local.name_prefix}${local.name_suffix}"
-  location                  = local.resource_group.location
-  resource_group_name       = local.resource_group.name
-  app_service_plan_id       = azurerm_app_service_plan.this.id
-  storage_connection_string = azurerm_storage_account.this.primary_connection_string
+  count                     = var.resource_group != null ? 0 : length(var.location)
+  name                      = "${local.name_prefix}-${replace(var.location[count.index],local.azure_short_region_regex,"$1")}${local.name_suffix}"
+  resource_group_name       = azurerm_resource_group.this[count.index].name
+  location                  = var.location[count.index]
+  app_service_plan_id       = azurerm_app_service_plan.this[0].id
+  storage_connection_string = azurerm_storage_account.this[0].primary_connection_string
   version                   = "~2"
   enable_builtin_logging    = false
   app_settings              = {
