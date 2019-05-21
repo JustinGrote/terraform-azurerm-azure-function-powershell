@@ -1,7 +1,3 @@
-output "azurerm_storage_account_name" {
-  description = "The storage account for the Azure Function Instance"
-  value = "${azurerm_storage_account.this[0].name}"
-}
 output "function_app_uri" {
   description = "The base URI for the Azure Functions Host. All your Azure Functions will be called from here"
   value = "https://${azurerm_function_app.this[0].name}.azurewebsites.net"

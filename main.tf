@@ -30,29 +30,27 @@ locals {
         : ""
   }"
 
-  #Pluggable Resource Group
-  resource_group = "${
-    var.resource_group != null
-    ? var.resource_group
-    : azurerm_resource_group.this[0]
-  }"
-
   #Abbreviate Azure Regions (replace everything but the first character of each word)
   azure_short_region_regex = "/\\b(\\w)((\\w*)?$|\\w+ )/"
 
   #Use the first location for multilocation resources
-  globalLocation = var.location[0]
+  global_location = var.location[0]
+
+  #Count used later if more than one location was specified
+  location_count = length(var.location)
 }
 
 resource "azurerm_resource_group" "global" {
   name     = "${local.name_prefix}${local.name_suffix}"
-  location = local.globalLocation
+  location = local.global_location
 }
+
 resource "azurerm_resource_group" "this" {
-  count    = var.resource_group != null ? 0 : length(var.location)
+  count    = local.location_count
   name     = "${local.name_prefix}-${replace(var.location[count.index],local.azure_short_region_regex,"$1")}${local.name_suffix}"
   location = var.location[count.index]
 }
+
 
 #Application Insights for Telementry
 resource "azurerm_application_insights" "this" {
@@ -64,7 +62,7 @@ resource "azurerm_application_insights" "this" {
 
 #Function App Infrastructure
 resource "azurerm_storage_account" "this" {
-  count                    = var.resource_group != null ? 0 : length(var.location)
+  count                    = local.location_count
   #Storage Accounts have strict naming requirements (3-24 alphanumeric characters, all lowercase), hence the convoluted naming syntax
   name                     = "${
                                 replace (
@@ -86,16 +84,16 @@ resource "azurerm_storage_account" "this" {
                                 )
                               }"
   resource_group_name      = azurerm_resource_group.this[count.index].name
-  location                 = var.location[count.index]
+  location                 = azurerm_resource_group.this[count.index].location
   account_tier             = "Standard"
   account_replication_type = "LRS"
 }
 
 resource "azurerm_app_service_plan" "this" {
-  count               = var.resource_group != null ? 0 : length(var.location)
+  count               = local.location_count
   name                = "${local.name_prefix}-${replace(var.location[count.index],local.azure_short_region_regex,"$1")}${local.name_suffix}"
   resource_group_name = azurerm_resource_group.this[count.index].name
-  location            = var.location[count.index]
+  location            = azurerm_resource_group.this[count.index].location
   kind                = "FunctionApp"
   sku {
     tier = "Dynamic"
@@ -104,16 +102,16 @@ resource "azurerm_app_service_plan" "this" {
 }
 
 resource "azurerm_function_app" "this" {
-  count                     = var.resource_group != null ? 0 : length(var.location)
+  count                     = local.location_count
   name                      = "${local.name_prefix}-${replace(var.location[count.index],local.azure_short_region_regex,"$1")}${local.name_suffix}"
   resource_group_name       = azurerm_resource_group.this[count.index].name
-  location                  = var.location[count.index]
-  app_service_plan_id       = azurerm_app_service_plan.this[0].id
-  storage_connection_string = azurerm_storage_account.this[0].primary_connection_string
+  location                  = azurerm_resource_group.this[count.index].location
+  app_service_plan_id       = azurerm_app_service_plan.this[count.index].id
+  storage_connection_string = azurerm_storage_account.this[count.index].primary_connection_string
   version                   = "~2"
   enable_builtin_logging    = false
   app_settings              = {
-    "FUNCTIONS_WORKER_RUNTIME"        = "powershell"
+    "FUNCTIONS_WORKER_RUNTIME"        = var.azurerm_function_app_runtime
     "APPINSIGHTS_INSTRUMENTATIONKEY"  = azurerm_application_insights.this.instrumentation_key
   }
   identity {
