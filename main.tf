@@ -40,6 +40,7 @@ locals {
   location_count = length(var.location)
 }
 
+
 resource "azurerm_resource_group" "global" {
   name     = "${local.name_prefix}${local.name_suffix}"
   location = local.global_location
@@ -99,6 +100,12 @@ resource "azurerm_app_service_plan" "this" {
     tier = "Dynamic"
     size = "Y1"
   }
+}
+
+resource "azurerm_user_assigned_identity" "this" {
+  name                = "${local.name_prefix}${local.name_suffix}"
+  resource_group_name = azurerm_resource_group.global.name
+  location            = azurerm_resource_group.global.location
 }
 
 resource "azurerm_function_app" "this" {

@@ -41,3 +41,19 @@ variable azurerm_traffic_manager {
   default = true
 }
 
+variable azurerm_key_vault {
+  description = "Set to false to disable the Azure Key Vault integration"  
+  type = bool
+  default = true
+}
+
+variable azurerm_key_vault_secrets {
+  description = "Specify a map (hashtable) of secrets to be stored in the key vault. These will be securely exposed to Azure functions as environment variables from Azure Key Vault. Example: {mysecret1 = \"supersecret1\",mysecret2 = \"supersecret2\"}"
+  default = null
+}
+
+variable azure_active_directory_id {
+  description = "The Directory ID of your Azure Active Directory, viewable in Properties on the Azure Portal. Defaults to the current Az CLI user's Account."
+  type = string
+  default = null
+}

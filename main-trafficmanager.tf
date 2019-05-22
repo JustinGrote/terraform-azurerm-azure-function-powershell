@@ -17,7 +17,7 @@ resource "azurerm_traffic_manager_profile" "this" {
 }
 
 resource "azurerm_traffic_manager_endpoint" "this" {
-  count               = var.azurerm_traffic_manager == true ? local.location_count : 0
+  count               = var.azurerm_traffic_manager ? local.location_count : 0
   name                = azurerm_function_app.this[count.index].name
   resource_group_name = azurerm_traffic_manager_profile.this[0].resource_group_name
   profile_name        = azurerm_traffic_manager_profile.this[0].name

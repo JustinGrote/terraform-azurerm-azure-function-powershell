@@ -24,3 +24,5 @@ Because of the limitations of using count for the multiregion functionality. Loc
 Because https://docs.microsoft.com/en-us/azure/azure-resource-manager/resource-group-overview#resource-groups:
 
 > If the resource group's region is temporarily unavailable, you can't update resources in the resource group because the metadata is unavailable. The resources in other regions will still function as expected, but you can't update them. To minimize risk, __locate your resource group and resources in the same region__.
+
+This is the same reason we do a key vault per region, even though they "should" fail over due to a regional outage, this design doesn't take that chance. May make this an option in the future, but since key vaults are only billed on consumption, this makes little difference since terraform takes care of the deployment complexity.
