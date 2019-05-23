@@ -16,12 +16,12 @@ variable "name" {
 #   default = null
 # }
 
-variable "location" {
+variable location {
   description = "Defines a list of azure locations to deploy the resource. If multiple locations are specified, the function is deployed to each location. It is recommended to use paired regions https://docs.microsoft.com/en-us/azure/best-practices-availability-paired-regions and to use the long names of locations so that abbreviations can be created appropriately. Example: [\"us west\",\"us east\"]"
   type = list(string)
 }
 
-variable "name_suffix" {
+variable name_suffix {
   description = "An optional suffix for your resources. By default, this is blank if in the default workspace and appends '-workspacename' if in a non-default workspace"
   type = string
   default = null
@@ -32,7 +32,6 @@ variable azurerm_function_app_runtime {
   type = string
   default = "powershell"
 }
-
 
 #Traffic Manager Toggle
 variable azurerm_traffic_manager {
@@ -47,8 +46,9 @@ variable azurerm_key_vault {
   default = true
 }
 
+# Removing this support for now
 variable azurerm_key_vault_secrets {
-  description = "Specify a map (hashtable) of secrets to be stored in the key vault. These will be securely exposed to Azure functions as environment variables from Azure Key Vault. Example: {mysecret1 = \"supersecret1\",mysecret2 = \"supersecret2\"}"
+  description = "Specify a map (hashtable) of secrets to be stored in the key vault. In the future these will be securely exposed as App Settings to the function. Example: {mysecret1 = \"supersecret1\",mysecret2 = \"supersecret2\"}"
   default = null
 }
 
@@ -56,4 +56,10 @@ variable azure_active_directory_id {
   description = "The Directory ID of your Azure Active Directory, viewable in Properties on the Azure Portal. Defaults to the current Az CLI user's Account."
   type = string
   default = null
+}
+
+variable app_settings {
+  description = "A map of app_settings to push to Azure Functions."
+  type = map(string)
+  default = {}
 }

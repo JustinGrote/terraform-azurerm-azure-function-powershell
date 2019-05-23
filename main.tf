@@ -40,7 +40,6 @@ locals {
   location_count = length(var.location)
 }
 
-
 resource "azurerm_resource_group" "global" {
   name     = "${local.name_prefix}${local.name_suffix}"
   location = local.global_location
@@ -51,7 +50,6 @@ resource "azurerm_resource_group" "this" {
   name     = "${local.name_prefix}-${replace(var.location[count.index],local.azure_short_region_regex,"$1")}${local.name_suffix}"
   location = var.location[count.index]
 }
-
 
 #Application Insights for Telementry
 resource "azurerm_application_insights" "this" {
@@ -102,12 +100,6 @@ resource "azurerm_app_service_plan" "this" {
   }
 }
 
-resource "azurerm_user_assigned_identity" "this" {
-  name                = "${local.name_prefix}${local.name_suffix}"
-  resource_group_name = azurerm_resource_group.global.name
-  location            = azurerm_resource_group.global.location
-}
-
 resource "azurerm_function_app" "this" {
   count                     = local.location_count
   name                      = "${local.name_prefix}-${replace(var.location[count.index],local.azure_short_region_regex,"$1")}${local.name_suffix}"
@@ -117,11 +109,20 @@ resource "azurerm_function_app" "this" {
   storage_connection_string = azurerm_storage_account.this[count.index].primary_connection_string
   version                   = "~2"
   enable_builtin_logging    = false
-  app_settings              = {
+  app_settings              = merge(var.app_settings,
+    {
     "FUNCTIONS_WORKER_RUNTIME"        = var.azurerm_function_app_runtime
     "APPINSIGHTS_INSTRUMENTATIONKEY"  = azurerm_application_insights.this.instrumentation_key
-  }
+    }
+  )
   identity {
     type = "SystemAssigned"
   }
+  lifecycle {
+    ignore_changes = ["app_settings"]
+  }
+}
+
+variable "test" {
+  default = "test"
 }

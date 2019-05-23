@@ -6,7 +6,7 @@ locals {
   }"
 
   #Nested Loop Strategy: https://serverfault.com/questions/833810/terraform-use-nested-loops-with-count/968309#968309
-  policy_count = "${
+  secret_count = "${
     var.azurerm_key_vault_secrets != null 
       ? length(var.azurerm_key_vault_secrets) * local.location_count
       : 0
@@ -39,17 +39,9 @@ resource "azurerm_key_vault" "this" {
   }
 }
 
-#Nested Loop Strategy: https://serverfault.com/questions/833810/terraform-use-nested-loops-with-count/968309#968309
-# resource "azurerm_key_vault_secret" "this" {
-#   count = local.policy_count
-#   key_vault_id = azurerm_key_vault.this[count.index % local.location_count].id
-#   name = keys(var.azurerm_key_vault_secrets)[floor(count.index / length(var.location))]
-#   value = var.azurerm_key_vault_secrets[keys(var.azurerm_key_vault_secrets)[floor(count.index / length(var.location))]]
-# }
-
 resource "azurerm_key_vault_access_policy" "terraform" {
-  count               = var.azurerm_key_vault ? 1 : 0
-  key_vault_id        = azurerm_key_vault.this[0].id
+  count               = var.azurerm_key_vault ? local.location_count : 0
+  key_vault_id        = azurerm_key_vault.this[count.index].id
   tenant_id           = local.azure_active_directory_id
   object_id           = data.external.this_az_account.result.objectId
   secret_permissions  = [
@@ -59,4 +51,24 @@ resource "azurerm_key_vault_access_policy" "terraform" {
   ]
 }
 
+resource "azurerm_key_vault_access_policy" "this" {
+  count               = var.azurerm_key_vault ? local.location_count : 0
+  key_vault_id        = azurerm_key_vault.this[count.index].id
+  tenant_id           = azurerm_function_app.this[count.index].identity[0].tenant_id
+  object_id           = azurerm_function_app.this[count.index].identity[0].principal_id
+  secret_permissions  = [
+    "get"
+  ]
+}
 
+#Nested Loop Strategy: https://serverfault.com/questions/833810/terraform-use-nested-loops-with-count/968309#968309
+resource "azurerm_key_vault_secret" "this" {
+  count =         local.secret_count
+  key_vault_id =  azurerm_key_vault.this[count.index % local.location_count].id
+  name =          keys(var.azurerm_key_vault_secrets)[floor(count.index / length(var.location))]
+  value =         var.azurerm_key_vault_secrets[keys(var.azurerm_key_vault_secrets)[floor(count.index / length(var.location))]]
+  #Key Vault doesn't grant sufficient rights by default
+  depends_on = [
+    azurerm_key_vault_access_policy.terraform
+  ]
+}
