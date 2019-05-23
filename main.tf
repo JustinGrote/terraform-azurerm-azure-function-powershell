@@ -13,13 +13,15 @@ provider "null" {
 
 locals {
   #Default to the name of the module
-  name_prefix = "${
-    var.name != null
-      ? var.name
-      : path.module != "."
-        ? basename(path.module)
-        : basename(path.cwd)
-  }"
+  # name_prefix = "${
+  #   var.name != null
+  #     ? var.name
+  #     : path.module != "."
+  #       ? basename(path.module)
+  #       : basename(path.cwd)
+  # }"
+  
+  name_prefix = path.cwd
 
   #If the workspace is not named "default", add it as a suffix
   name_suffix = "${
@@ -135,8 +137,4 @@ resource "azurerm_function_app" "this" {
     ignore_changes = ["app_settings"]
   }
   tags      = local.global_tags
-}
-
-variable "test" {
-  default = "test"
 }
