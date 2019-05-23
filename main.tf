@@ -12,12 +12,14 @@ provider "null" {
 }
 
 locals {
-  #Default to the name of the module, unless the module was sourced from the Terraform Registry, then use the name of the folder
+  regex_git_commit = "^.+-[a-f0-9]{7}$"
+
+  #Default to the name of the module
   name_prefix = "${
     var.name != null
       ? var.name
-      : replace(basename(path.module),"/-\\w+$/","") == "JustinGrote-terraform-azurerm-azure-function-powershell"
-        #Fix issue when fetched from a module registry, get the parent path
+      #Fix issue when fetched from a git commit or tf registry, get the parent path for default name
+      : replace(basename(path.module),regex_git_commit,"") == ""
         ? basename(dirname(path.module))
         : basename(path.module)
   }"
