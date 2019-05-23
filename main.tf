@@ -12,16 +12,16 @@ provider "null" {
 }
 
 locals {
-  #Default to the name of the module
-  # name_prefix = "${
-  #   var.name != null
-  #     ? var.name
-  #     : path.module != "."
-  #       ? basename(path.module)
-  #       : basename(path.cwd)
-  # }"
+  #Default to the name of the module, unless the module was sourced from the Terraform Registry, then use the name of the folder
+  name_prefix = "${
+    var.name != null
+      ? var.name
+      : replace(path.module,"/-\\d{3}\\d+$/","") != "JustinGrote-terraform-azurerm-azure-function-powershell"
+        ? basename(path.module)
+        : basename(path.cwd)
+  }"
   
-  name_prefix = path.cwd
+  name_prefix = basename(path.cwd)
 
   #If the workspace is not named "default", add it as a suffix
   name_suffix = "${
