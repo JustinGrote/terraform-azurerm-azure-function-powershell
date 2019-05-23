@@ -25,6 +25,7 @@ This was designed and tested for Powershell, however other workers _may_ work by
 
 <!-- /TOC -->
 
+
 # Requirements
 * Terraform 0.12+
 * (If using Azure Key Vault): Az CLI installed and available in PATH
@@ -141,6 +142,7 @@ This module was written for 0.12, therefore it is a good example of several new 
 1. Using strong types and objects
 1. Outputting entire object lists in outputs
 
+---
 # FAQ
 
 ### Why aren't the function app, key vault, etc. separate submodules?
@@ -156,6 +158,7 @@ Because https://docs.microsoft.com/en-us/azure/azure-resource-manager/resource-g
 
 This is the same reason we do a key vault per region, even though they "should" fail over due to a regional outage, this design doesn't take that chance. May make this an option in the future, but since key vaults are only billed on consumption, this makes little difference since terraform takes care of the deployment complexity.
 
+---
 # Limitations
 1. __No SSL Certificate Support__ - If you enable the traffic manager, http requests will work fine, but if you want to use https with your functions you will get SSL warnings because for some dumb reason MS has decided that Azure Website certificates don't have the trafficmanager domain in them. I'm looking at some models to automatically distribute an SSL certificate for custom domains or use LetsEncrypt, but they are complex to implement in terraform and can probably more easily be done by a higher-level configuration management. I think its a reasonable thing to be in the terraform scope however. For now follow the normal manual instructions for installing a certificate for a traffic manager domain.
 1. __No Azure Key Vault Application Settings Integration__ - Application Settings can be stored in Key Vault and referenced into App Settings. I may add this as an option but since Application Settings are encrypted at rest already, it makes little sense to do so until automatic key rotation is supported for this feature (not supported as of Q2 2019)
