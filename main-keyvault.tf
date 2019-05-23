@@ -18,6 +18,7 @@ data "azurerm_subscription" "this" {}
 data "azurerm_client_config" "this" {}
 
 data "external" "this_az_account" {
+  count = var.azurerm_key_vault ? 1 : 0
   program = [
     "az",
     "ad",
@@ -25,6 +26,9 @@ data "external" "this_az_account" {
     "show",
     "--query",
     "{displayName: displayName,objectId: objectId,objectType: objectType,odata_metadata: \"odata.metadata\"}"
+  ]
+  depends_on = [
+    azurerm_key_vault.this[0]
   ]
 }
 
@@ -44,7 +48,7 @@ resource "azurerm_key_vault_access_policy" "terraformuser" {
   count               = var.azurerm_key_vault ? local.location_count : 0
   key_vault_id        = azurerm_key_vault.this[count.index].id
   tenant_id           = local.azure_active_directory_id
-  object_id           = data.external.this_az_account.result.objectId
+  object_id           = data.external.this_az_account[0].result.objectId
   secret_permissions  = [
     "get",
     "set",

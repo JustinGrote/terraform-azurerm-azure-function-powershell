@@ -5,6 +5,7 @@ Deploys an opinionated Azure Functions Powershell infrastructure with intelligen
 This was designed and tested for Powershell, however other workers _may_ work by setting the `azurerm_function_app_runtime` variable.
 <!-- TOC -->
 
+- [Requirements](#requirements)
 - [Examples](#examples)
     - [Test Deployment](#test-deployment)
     - [Resilient Deployment](#resilient-deployment)
@@ -23,6 +24,10 @@ This was designed and tested for Powershell, however other workers _may_ work by
 - [Limitations](#limitations)
 
 <!-- /TOC -->
+
+# Requirements
+* Terraform 0.12+
+* (If using Azure Key Vault): Az CLI installed and available in PATH
 
 # Examples
 _Note_: These examples are additive and show the power of terraform. If you start with "Test Deployment" and then change it to "Large Deployment" and keep the same module name, Terraform will only implement the differences
