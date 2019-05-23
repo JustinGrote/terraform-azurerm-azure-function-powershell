@@ -20,8 +20,6 @@ locals {
         ? basename(path.module)
         : basename(path.cwd)
   }"
-  
-  name_prefix = basename(path.cwd)
 
   #If the workspace is not named "default", add it as a suffix
   name_suffix = "${
