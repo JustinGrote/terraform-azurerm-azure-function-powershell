@@ -12,7 +12,7 @@ provider "null" {
 }
 
 locals {
-  regex_git_commit = "^.+-[a-f0-9]{7}$"
+  regex_git_commit = "/^.+-[a-f0-9]{7}$/"
 
   #Default to the name of the module
   name_prefix = "${
