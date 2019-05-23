@@ -19,7 +19,7 @@ locals {
     var.name != null
       ? var.name
       #Fix issue when fetched from a git commit or tf registry, get the parent path for default name
-      : replace(basename(path.module),regex_git_commit,"") == ""
+      : replace(basename(path.module),local.regex_git_commit,"") == ""
         ? basename(dirname(path.module))
         : basename(path.module)
   }"
