@@ -38,17 +38,27 @@ locals {
 
   #Count used later if more than one location was specified
   location_count = length(var.location)
+  
+  #Global Tags
+  global_tags = merge(
+    {
+      TERRAFORM = true
+      TFENV = terraform.workspace
+    },var.tags
+  )
 }
 
 resource "azurerm_resource_group" "global" {
-  name     = "${local.name_prefix}${local.name_suffix}"
-  location = local.global_location
+  name      = "${local.name_prefix}${local.name_suffix}"
+  location  = local.global_location
+  tags      = local.global_tags
 }
 
 resource "azurerm_resource_group" "this" {
-  count    = local.location_count
-  name     = "${local.name_prefix}-${replace(var.location[count.index],local.azure_short_region_regex,"$1")}${local.name_suffix}"
-  location = var.location[count.index]
+  count     = local.location_count
+  name      = "${local.name_prefix}-${replace(var.location[count.index],local.azure_short_region_regex,"$1")}${local.name_suffix}"
+  location  = var.location[count.index]
+  tags      = local.global_tags
 }
 
 #Application Insights for Telementry
@@ -57,6 +67,7 @@ resource "azurerm_application_insights" "this" {
   location            = azurerm_resource_group.global.location
   resource_group_name = azurerm_resource_group.global.name
   application_type    = "Web"
+  tags      = local.global_tags
 }
 
 #Function App Infrastructure
@@ -86,6 +97,7 @@ resource "azurerm_storage_account" "this" {
   location                 = azurerm_resource_group.this[count.index].location
   account_tier             = "Standard"
   account_replication_type = "LRS"
+  tags      = local.global_tags
 }
 
 resource "azurerm_app_service_plan" "this" {
@@ -98,6 +110,7 @@ resource "azurerm_app_service_plan" "this" {
     tier = "Dynamic"
     size = "Y1"
   }
+  tags      = local.global_tags
 }
 
 resource "azurerm_function_app" "this" {
@@ -121,6 +134,7 @@ resource "azurerm_function_app" "this" {
   lifecycle {
     ignore_changes = ["app_settings"]
   }
+  tags      = local.global_tags
 }
 
 variable "test" {

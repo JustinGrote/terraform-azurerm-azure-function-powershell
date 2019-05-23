@@ -4,6 +4,12 @@ variable "name" {
   default = null
 }
 
+variable "tags" {
+  description = "Additional tags that you wish to add to all resources"
+  type = map(string)
+  default = {}
+}
+
 ### FOR FUTURE USE
 # variable "resource_group" {
 #   description = "An existing resource group to deploy the azure function in. If not specified, it will autocreate one per region."

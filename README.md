@@ -1,13 +1,10 @@
-# terraform-azurerm-azure-function-powershell
 [Available on Terraform Module Registry](https://registry.terraform.io/modules/JustinGrote/azure-function-powershell/)
 
-Deploys a Azure Functions Powershell Worker along with Application Insights and a Key Vault. 
+Deploys an opinionated Azure Functions Powershell infrastructure with intelligent defaults.
 
 This was designed and tested for Powershell, however other workers _may_ work by setting the `azurerm_function_app_runtime` variable.
-
 <!-- TOC -->
 
-- [terraform-azurerm-azure-function-powershell](#terraform-azurerm-azure-function-powershell)
 - [Examples](#examples)
     - [Test Deployment](#test-deployment)
     - [Resilient Deployment](#resilient-deployment)
@@ -20,6 +17,7 @@ This was designed and tested for Powershell, however other workers _may_ work by
     - [Workspace Support](#workspace-support)
     - [Unified Application Insights Workspace](#unified-application-insights-workspace)
     - [Optional Resources](#optional-resources)
+    - [Global Tags](#global-tags)
     - [0.12 Features](#012-features)
 - [FAQ](#faq)
 - [Limitations](#limitations)
@@ -113,14 +111,22 @@ By default this module will create an Azure Traffic Manager that will balance an
 By default this module will create an Azure Key Vault for each function app and set up the appropriate rights to access it from the Azure Function.
 
 ## Workspace Support
-If you are in a non-default terraform workspace, it will automatically append the workspace name to the resource names. For example, if you are in "dev" workspace, myfunction-westus becomes myfunction-westus-dev. Use the name_suffix variable to override this behavior by setting it to null or something else. This makes it possible to quickly create dev, test, and prod environments simply by changing the workspace and running an apply.
+If you are in a non-default terraform workspace, it will automatically append the workspace name to the resource names. For example, if you are in "dev" workspace, myfunction-westus becomes myfunction-westus-dev. Use the `name_suffix` variable to override this behavior by setting it to null or something else. This makes it possible to quickly create dev, test, and prod environments simply by changing the workspace and running an apply.
 
 ## Unified Application Insights Workspace
-
 All defined function apps go to the same Application Insights workspace, providing a unified view of the performance of the function app as a whole.
 
 ## Optional Resources
 If you just want a simple function app, you can disable the optional key vault, api gateway, and traffic manager components with the corresponding variables.
+
+## Global Tags
+By default the following tags get added:
+
+* `TERRAFORM = true`
+* `TFENV = terraform.workspace`
+
+As well as any tags you specify with the `tags` variable.
+
 
 ## 0.12 Features
 This module was written for 0.12, therefore it is a good example of several new features.

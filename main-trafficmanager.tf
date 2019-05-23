@@ -1,19 +1,20 @@
 
 
 resource "azurerm_traffic_manager_profile" "this" {
-  count               = var.azurerm_traffic_manager == true ? 1 : 0
-  name                = "${local.name_prefix}${local.name_suffix}"
-  resource_group_name = lower(azurerm_resource_group.global.name)
-  traffic_routing_method = "Performance"
+  count                   = var.azurerm_traffic_manager == true ? 1 : 0
+  name                    = "${local.name_prefix}${local.name_suffix}"
+  resource_group_name     = lower(azurerm_resource_group.global.name)
+  traffic_routing_method  = "Performance"
   dns_config {
-    relative_name = lower("${local.name_prefix}${local.name_suffix}")
-    ttl           = 100
+    relative_name         = lower("${local.name_prefix}${local.name_suffix}")
+    ttl                   = 100
   }
   monitor_config {
-    protocol = "http"
-    port     = 80
-    path     = "/"
+    protocol              = "http"
+    port                  = 80
+    path                  = "/"
   }
+  tags                    = local.global_tags
 }
 
 resource "azurerm_traffic_manager_endpoint" "this" {

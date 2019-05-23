@@ -37,9 +37,10 @@ resource "azurerm_key_vault" "this" {
   sku {
     name = "standard"
   }
+  tags                = local.global_tags
 }
 
-resource "azurerm_key_vault_access_policy" "terraform" {
+resource "azurerm_key_vault_access_policy" "terraformuser" {
   count               = var.azurerm_key_vault ? local.location_count : 0
   key_vault_id        = azurerm_key_vault.this[count.index].id
   tenant_id           = local.azure_active_directory_id
@@ -63,12 +64,13 @@ resource "azurerm_key_vault_access_policy" "this" {
 
 #Nested Loop Strategy: https://serverfault.com/questions/833810/terraform-use-nested-loops-with-count/968309#968309
 resource "azurerm_key_vault_secret" "this" {
-  count =         local.secret_count
-  key_vault_id =  azurerm_key_vault.this[count.index % local.location_count].id
-  name =          keys(var.azurerm_key_vault_secrets)[floor(count.index / length(var.location))]
-  value =         var.azurerm_key_vault_secrets[keys(var.azurerm_key_vault_secrets)[floor(count.index / length(var.location))]]
+  count             = local.secret_count
+  key_vault_id      = azurerm_key_vault.this[count.index % local.location_count].id
+  name              = keys(var.azurerm_key_vault_secrets)[floor(count.index / length(var.location))]
+  value             = var.azurerm_key_vault_secrets[keys(var.azurerm_key_vault_secrets)[floor(count.index / length(var.location))]]
   #Key Vault doesn't grant sufficient rights by default
   depends_on = [
-    azurerm_key_vault_access_policy.terraform
+    azurerm_key_vault_access_policy.terraformuser
   ]
+  tags              = local.global_tags
 }
