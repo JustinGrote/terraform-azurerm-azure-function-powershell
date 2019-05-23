@@ -16,7 +16,7 @@ locals {
   name_prefix = "${
     var.name != null
       ? var.name
-      : replace(path.module,"/-\\d{3}\\d+$/","") != "JustinGrote-terraform-azurerm-azure-function-powershell"
+      : replace(path.module,"/-\\w+$/","") != "JustinGrote-terraform-azurerm-azure-function-powershell"
         ? basename(path.module)
         : basename(path.cwd)
   }"
