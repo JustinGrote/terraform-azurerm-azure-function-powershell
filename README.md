@@ -5,6 +5,27 @@ Deploys a Azure Functions Powershell Worker along with Application Insights and 
 
 This was designed and tested for Powershell, however other workers _may_ work by setting the `azurerm_function_app_runtime` variable.
 
+<!-- TOC -->
+
+- [terraform-azurerm-azure-function-powershell](#terraform-azurerm-azure-function-powershell)
+- [Examples](#examples)
+    - [Test Deployment](#test-deployment)
+    - [Resilient Deployment](#resilient-deployment)
+    - [Large Deployment](#large-deployment)
+- [Features](#features)
+    - [Built in Multi-Region Resiliency](#built-in-multi-region-resiliency)
+    - [Low Idle Cost](#low-idle-cost)
+    - [Traffic Manager Integration](#traffic-manager-integration)
+    - [Key Vault Integration](#key-vault-integration)
+    - [Workspace Support](#workspace-support)
+    - [Unified Application Insights Workspace](#unified-application-insights-workspace)
+    - [Optional Resources](#optional-resources)
+    - [0.12 Features](#012-features)
+- [FAQ](#faq)
+- [Limitations](#limitations)
+
+<!-- /TOC -->
+
 # Examples
 _Note_: These examples are additive and show the power of terraform. If you start with "Test Deployment" and then change it to "Large Deployment" and keep the same module name, Terraform will only implement the differences
 
