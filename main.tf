@@ -16,10 +16,10 @@ locals {
   name_prefix = "${
     var.name != null
       ? var.name
-      : basename(path.cwd)
-      # : replace(path.module,"/-\\w+$/","") != "JustinGrote-terraform-azurerm-azure-function-powershell"
-      #   ? basename(path.module)
-      #   : basename(path.cwd)
+      : replace(basename(path.module),"/-\\w+$/","") == "JustinGrote-terraform-azurerm-azure-function-powershell"
+        #Fix issue when fetched from a module registry, get the parent path
+        ? basename(dirname(path.module))
+        : basename(path.module)
   }"
 
   #If the workspace is not named "default", add it as a suffix
