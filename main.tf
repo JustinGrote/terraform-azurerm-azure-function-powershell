@@ -33,11 +33,66 @@ locals {
         : ""
   }"
 
-  #Abbreviate Azure Regions (replace everything but the first character of each word)
-  azure_short_region_regex = "/\\b(\\w)((\\w*)?$|\\w+ )/"
+  alphanumeric_only_regex = "/[\\W\\ \\_]/"
+
+  #Generate a short location name for each region
+  azure_short_location_regex = "/\\b(\\w)((\\w*)?$|\\w+ )/" #Abbreviate the Azure Location
+  azure_short_location = [
+    for location in var.location:
+    lower(
+      replace( #Remove spaces because I can't figure out how to make this work in the first regex
+        replace(
+          location,
+          local.azure_short_location_regex,
+          "$1"
+        ),
+        "/ /",
+        ""
+      )
+    )
+  ]
 
   #Use the first location for multilocation resources
   global_location = var.location[0]
+  global_name = "${local.name_prefix}${local.name_suffix}"
+
+  # Generate names for each location
+  default_name = [
+    for azure_short_location in local.azure_short_location:
+    join("",
+      [
+        local.name_prefix,
+        local.name_suffix,
+        "-",
+        azure_short_location
+      ]
+    )
+  ]
+
+  #Generate storage account names for each location, which have strict requirements
+  storage_account_short_name = [
+    for azure_short_location in local.azure_short_location:
+      lower(
+        join("",
+          [
+            substr(replace(local.name_prefix,local.alphanumeric_only_regex,""),0,15),
+            substr(azure_short_location,0,3),
+            substr(replace(local.name_suffix,local.alphanumeric_only_regex,""),0,1),
+            #Add a pseudorandom suffix to avoid potential name collisions
+            substr("${sha1(azure_short_location)}",0,4)
+          ]
+        )
+      )
+  ]
+
+  #If the default storage account name after formatting is more than 24 characters, use the short name
+  storage_account_name = [
+    for default_name in local.default_name: "${
+      length(lower(replace(default_name,local.alphanumeric_only_regex,""))) <= 24
+      ? lower(replace(default_name,local.alphanumeric_only_regex,""))
+      : local.storage_account_short_name[index(local.default_name,default_name)]
+    }"
+  ]
 
   #Count used later if more than one location was specified
   location_count = length(var.location)
@@ -45,28 +100,28 @@ locals {
   #Global Tags
   global_tags = merge(
     {
-      TERRAFORM = true
-      TFENV = terraform.workspace
+      TERRAFORM = "TRUE"
+      TFWORKSPACE = terraform.workspace
     },var.tags
   )
 }
 
 resource "azurerm_resource_group" "global" {
-  name      = "${local.name_prefix}${local.name_suffix}"
+  name      = local.global_name
   location  = local.global_location
   tags      = local.global_tags
 }
 
 resource "azurerm_resource_group" "this" {
   count     = local.location_count
-  name      = "${local.name_prefix}-${replace(var.location[count.index],local.azure_short_region_regex,"$1")}${local.name_suffix}"
+  name      = local.default_name[count.index]
   location  = var.location[count.index]
   tags      = local.global_tags
 }
 
 #Application Insights for Telementry
 resource "azurerm_application_insights" "this" {
-  name                = "${local.name_prefix}${local.name_suffix}"
+  name                = local.global_name
   location            = azurerm_resource_group.global.location
   resource_group_name = azurerm_resource_group.global.name
   application_type    = "Web"
@@ -76,26 +131,7 @@ resource "azurerm_application_insights" "this" {
 #Function App Infrastructure
 resource "azurerm_storage_account" "this" {
   count                    = local.location_count
-  #Storage Accounts have strict naming requirements (3-24 alphanumeric characters, all lowercase), hence the convoluted naming syntax
-  name                     = "${
-                                replace (
-                                  lower(
-                                    "${
-                                      local.name_prefix
-                                      }-${
-                                        replace(
-                                          var.location[count.index],
-                                          local.azure_short_region_regex,
-                                          "$1"
-                                        )
-                                      }${
-                                      local.name_suffix
-                                    }"
-                                  ),
-                                  "/[^\\w0-9]/",
-                                  ""
-                                )
-                              }"
+  name                     = local.storage_account_name[count.index]
   resource_group_name      = azurerm_resource_group.this[count.index].name
   location                 = azurerm_resource_group.this[count.index].location
   account_tier             = "Standard"
@@ -105,7 +141,7 @@ resource "azurerm_storage_account" "this" {
 
 resource "azurerm_app_service_plan" "this" {
   count               = local.location_count
-  name                = "${local.name_prefix}-${replace(var.location[count.index],local.azure_short_region_regex,"$1")}${local.name_suffix}"
+  name                = local.default_name[count.index]
   resource_group_name = azurerm_resource_group.this[count.index].name
   location            = azurerm_resource_group.this[count.index].location
   kind                = "FunctionApp"
@@ -118,7 +154,7 @@ resource "azurerm_app_service_plan" "this" {
 
 resource "azurerm_function_app" "this" {
   count                     = local.location_count
-  name                      = "${local.name_prefix}-${replace(var.location[count.index],local.azure_short_region_regex,"$1")}${local.name_suffix}"
+  name                      = local.default_name[count.index]
   resource_group_name       = azurerm_resource_group.this[count.index].name
   location                  = azurerm_resource_group.this[count.index].location
   app_service_plan_id       = azurerm_app_service_plan.this[count.index].id

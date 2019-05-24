@@ -2,11 +2,11 @@
 
 resource "azurerm_traffic_manager_profile" "this" {
   count                   = var.azurerm_traffic_manager == true ? 1 : 0
-  name                    = "${local.name_prefix}${local.name_suffix}"
+  name                    = local.global_name
   resource_group_name     = lower(azurerm_resource_group.global.name)
   traffic_routing_method  = "Performance"
   dns_config {
-    relative_name         = lower("${local.name_prefix}${local.name_suffix}")
+    relative_name         = lower(replace(local.global_name,local.alphanumeric_only_regex,"-"))
     ttl                   = 100
   }
   monitor_config {

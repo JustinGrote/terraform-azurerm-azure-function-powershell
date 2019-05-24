@@ -34,7 +34,7 @@ data "external" "this_az_account" {
 
 resource "azurerm_key_vault" "this" {
   count               = var.azurerm_key_vault ? local.location_count : 0
-  name                = "${local.name_prefix}-${replace(var.location[count.index],local.azure_short_region_regex,"$1")}${local.name_suffix}"
+  name                = length(local.default_name[count.index]) <= 24 ? local.default_name[count.index] : local.storage_account_short_name[count.index]
   location            = azurerm_resource_group.this[count.index].location
   resource_group_name = azurerm_resource_group.this[count.index].name
   tenant_id           = local.azure_active_directory_id
