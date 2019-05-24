@@ -37,7 +37,7 @@ output "azurerm_function_app_outbound_ip_addresses" {
             distinct(
               split(",",
                 join(",",
-                  azurerm_function_app.this[*].outbound_ip_addresses
+                  azurerm_function_app.this.*.outbound_ip_addresses
                 )
               )
             )
@@ -50,7 +50,7 @@ output "azurerm_function_app_possible_outbound_ip_addresses" {
             distinct(
               split(",",
                 join(",",
-                  azurerm_function_app.this[*].possible_outbound_ip_addresses
+                  azurerm_function_app.this.*.possible_outbound_ip_addresses
                 )
               )
             )
