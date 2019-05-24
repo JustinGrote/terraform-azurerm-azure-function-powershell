@@ -76,8 +76,8 @@ locals {
         join("",
           [
             substr(replace(local.name_prefix,local.alphanumeric_only_regex,""),0,15),
-            substr(azure_short_location,0,3),
             substr(replace(local.name_suffix,local.alphanumeric_only_regex,""),0,1),
+            substr(azure_short_location,0,3),
             #Add a pseudorandom suffix to avoid potential name collisions
             substr("${sha1(azure_short_location)}",0,4)
           ]
