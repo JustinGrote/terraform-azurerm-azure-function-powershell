@@ -1,0 +1,10 @@
+    #"KEYVAULT_USERNAME"               = "@Microsoft.KeyVault(VaultName=${azurerm_key_vault.this.name};SecretName=${azurerm_key_vault_secret.username.name};SecretVersion=${azurerm_key_vault_secret.username.version})"
+    #"KEYVAULT_PASSWORD"               = "@Microsoft.KeyVault(VaultName=${azurerm_key_vault.this.name};SecretName=${azurerm_key_vault_secret.password.name};SecretVersion=${azurerm_key_vault_secret.password.version})"
+
+#These had to be done separately from app_settings because it created a circular dependency
+resource "null_resource" "azurerm_function_app_this_keyvaultsecrets" {
+    provisioner "local-exec" {
+      command = "az functionapp config appsettings set --subscription ${data.azurerm_subscription.this.id} --resource-group ${azurerm_resource_group.this.name} --name ${azurerm_function_app.this.name} --query \"[].name\" --output table --settings ${azurerm_key_vault_secret.username.name}=\"@Microsoft.KeyVault(VaultName=${azurerm_key_vault.this.name};SecretName=${azurerm_key_vault_secret.username.name};SecretVersion=${azurerm_key_vault_secret.username.version})"
+      # ${azurerm_key_vault_secret.username.name}=\"@Microsoft.KeyVault(VaultName=${azurerm_key_vault.this.name};SecretName=${azurerm_key_vault_secret.username.name};SecretVersion=${azurerm_key_vault_secret.username.version})\" ${azurerm_key_vault_secret.password.name}=\"@Microsoft.KeyVault(VaultName=${azurerm_key_vault.this.name};SecretName=${azurerm_key_vault_secret.password.name};SecretVersion=${azurerm_key_vault_secret.password.version})\""
+    }
+  }

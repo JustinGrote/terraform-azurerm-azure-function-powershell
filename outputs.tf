@@ -23,12 +23,12 @@ output "azurerm_key_vault" {
 
 output "azurerm_traffic_manager_fqdn" {
   description = "The address endpoint for the Azure Function Traffic Manager. Use as the most reliable entry point"
-  value = azurerm_traffic_manager_profile.this[*].fqdn
+  value = azurerm_traffic_manager_profile.this.*.fqdn
 }
 
 output "azurerm_function_app_default_hostnames" {
   description = "The address endpoint for the individual Azure Function endpoints. Use to test on a per location basis."
-  value = azurerm_function_app.this[*].default_hostname
+  value = azurerm_function_app.this.*.default_hostname
 }
 
 output "azurerm_function_app_outbound_ip_addresses" {
