@@ -27,9 +27,6 @@ data "external" "this_az_account" {
     "--query",
     "{displayName: displayName,objectId: objectId,objectType: objectType,odata_metadata: \"odata.metadata\"}"
   ]
-  depends_on = [
-    azurerm_key_vault.this[0]
-  ]
 }
 
 resource "azurerm_key_vault" "this" {
@@ -48,7 +45,7 @@ resource "azurerm_key_vault_access_policy" "terraformuser" {
   count               = var.azurerm_key_vault ? local.location_count : 0
   key_vault_id        = azurerm_key_vault.this[count.index].id
   tenant_id           = local.azure_active_directory_id
-  object_id           = data.external.this_az_account[0].result.objectId
+  object_id           = tostring(data.external.this_az_account[0].result.objectId)
   secret_permissions  = [
     "get",
     "set",
