@@ -12,6 +12,10 @@ output "azurerm_application_insights" {
 output "azurerm_function_app" {
   value = azurerm_function_app.this
 }
+
+output "azurerm_storage_account" {
+  value = azurerm_storage_account.this
+}
  
 output "azurerm_traffic_manager_profile" {
   value = azurerm_traffic_manager_profile.this
