@@ -35,9 +35,7 @@ resource "azurerm_key_vault" "this" {
   location            = azurerm_resource_group.this[count.index].location
   resource_group_name = azurerm_resource_group.this[count.index].name
   tenant_id           = local.azure_active_directory_id
-  sku_name {
-    name = "standard"
-  }
+  sku_name            = "standard"
   tags                = local.global_tags
 }
 

@@ -149,7 +149,7 @@ resource "azurerm_app_service_plan" "this" {
   resource_group_name = local.single_region_app ? azurerm_resource_group.global.name : azurerm_resource_group.this[count.index].name
   location            = local.single_region_app ? azurerm_resource_group.global.location : azurerm_resource_group.this[count.index].location
   kind                = "FunctionApp"
-  sku_name {
+  sku {
     tier = "Dynamic"
     size = "Y1"
   }
