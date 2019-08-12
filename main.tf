@@ -21,7 +21,7 @@ locals {
       #Fix issue when fetched from a git commit or tf registry, get the parent path for default name
       : replace(basename(path.module),local.regex_git_commit,"") == ""
         ? basename(dirname(path.module))
-        :  basename(path.module)
+        : basename(path.module)
   }"
 
   #If the workspace is not named "default", add it as a suffix
@@ -30,7 +30,7 @@ locals {
       ? var.name_suffix
       : terraform.workspace != "default"
         ? "-${terraform.workspace}"
-        :  ""
+        : ""
   }"
 
   alphanumeric_only_regex = "/[\\W\\ \\_]/"
@@ -94,7 +94,7 @@ locals {
     for default_name in local.default_name: "${
       length(lower(replace(default_name,local.alphanumeric_only_regex,""))) <= 24
       ? lower(replace(default_name,local.alphanumeric_only_regex,""))
-      :  local.storage_account_short_name[index(local.default_name,default_name)]
+      : local.storage_account_short_name[index(local.default_name,default_name)]
     }"
   ]
 
