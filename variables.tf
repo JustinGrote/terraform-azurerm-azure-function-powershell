@@ -1,10 +1,16 @@
-variable "name" {
+variable name {
   description = "The name of your deployment. This will be used as the resource group name and prefix for all related resources. If not specified, it will use the name of the module as you defined it."
   type = string
   default = null
 }
 
-variable "tags" {
+variable subscription_id {
+  description = "Specify the subscription ID to deploy into. By default this uses your current az subscription"
+  type = string
+  default = null
+}
+
+variable tags {
   description = "Additional tags that you wish to add to all resources"
   type = map(string)
   default = {}
@@ -69,8 +75,6 @@ variable azure_active_directory_id {
   type = string
   default = null
 }
-
-
 
 variable app_settings {
   description = "A map of app_settings to push to Azure Functions."

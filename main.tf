@@ -2,7 +2,8 @@ terraform {
   required_version = ">= 0.12.6"
 }
 provider "azurerm" {
-  version = "~> 1.28"
+  version = "~> 1.32.1"
+  subscription_id = var.subscription_id
 }
 provider "external" {
   version = "~> 1.1"
