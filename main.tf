@@ -1,5 +1,5 @@
 terraform {
-  required_version = ">= 0.12.0"
+  required_version = ">= 0.12.6"
 }
 provider "azurerm" {
   version = "~> 1.28"
@@ -149,7 +149,7 @@ resource "azurerm_app_service_plan" "this" {
   resource_group_name = local.single_region_app ? azurerm_resource_group.global.name : azurerm_resource_group.this[count.index].name
   location            = local.single_region_app ? azurerm_resource_group.global.location : azurerm_resource_group.this[count.index].location
   kind                = "FunctionApp"
-  sku {
+  sku_name {
     tier = "Dynamic"
     size = "Y1"
   }
